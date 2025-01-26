@@ -9,13 +9,21 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone to process voice commands.",
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice to text."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adapt.png",
         "backgroundColor": "#000000"
-      }
+      },
+      "permissions": [
+        "ANDROID.PERMISSION.RECORD_AUDIO",
+        "ANDROID.PERMISSION.INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
