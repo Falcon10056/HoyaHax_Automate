@@ -1,91 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import * as Speech from 'expo-speech';
-import * as Permissions from 'expo-permissions';  // Import Expo Permissions
-import Voice, { SpeechResultsEvent } from '@react-native-voice/voice'; // Ensure Voice is imported correctly
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import Voice from '@react-native-voice/voice';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const App = () => {
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
 
-  useEffect(() => {
-    // Register the event listener for speech recognition results
+  // Initialize Voice Listener
+  React.useEffect(() => {
+    Voice.onSpeechStart = onSpeechStart;
+    Voice.onSpeechEnd = onSpeechEnd;
     Voice.onSpeechResults = onSpeechResults;
-
-    // Request microphone permission on mount
-    requestPermissions();
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
     };
   }, []);
 
-  // Request microphone and speech recognition permissions
-  const requestPermissions = async () => {
-    try {
-      const { status } = await Permissions.askAsync(Permissions.AUDIO_RECORDING);
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'You need to grant microphone access to use voice features.');
-      }
-    } catch (error) {
-      console.error('Permission request failed', error);
-    }
-  };
-
-  // Handle speech recognition results
-  const onSpeechResults = (event: SpeechResultsEvent) => {
-    if (event.value && event.value[0]) {
-      setInputText(event.value[0]); // Update the textbox with speech result
-    }
-  };
-
-  // Start voice listening
-  const startListening = () => {
+  // Callbacks for Voice Events
+  const onSpeechStart = () => {
     setIsListening(true);
-    Voice.start('en-US');  // Start listening in English
   };
 
-  // Stop listening
-  const stopListening = () => {
+  const onSpeechEnd = () => {
     setIsListening(false);
-    Voice.stop();
   };
 
-  // Speak the current text in the text box
-  const startSpeaking = () => {
-    Speech.speak(inputText, {
-      language: 'en',
-    });
+  const onSpeechResults = (event) => {
+    const spokenText = event.value[0];
+    setInputText(spokenText);
+  };
+
+  // Start Recording
+  const startRecording = async () => {
+    try {
+      await Voice.start('en-US'); // Specify the language
+      setIsListening(true);
+    } catch (error) {
+      console.error('Error starting voice recognition:', error);
+    }
+  };
+
+  // Stop Recording
+  const stopRecording = async () => {
+    try {
+      await Voice.stop();
+      setIsListening(false);
+    } catch (error) {
+      console.error('Error stopping voice recognition:', error);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>AutoMate</Text>
 
-      {/* TextBox */}
-      <TextInput
-        style={styles.textBox}
-        placeholder="What would you like to do today?"
-        placeholderTextColor="#BCAAA4"
-        value={inputText}
-        onChangeText={setInputText}
-      />
+      {/* TextBox and Voice Button */}
+      <View style={styles.textBoxContainer}>
+        <TextInput
+          style={styles.textBox}
+          placeholder="What would you like to do today?"
+          placeholderTextColor="#BCAAA4"
+          value={inputText}
+          onChangeText={setInputText}
+        />
 
-      {/* Voice Button */}
-      <TouchableOpacity
-        style={styles.voiceButton}
-        onPress={isListening ? stopListening : startListening}
-      >
-        <Text style={styles.buttonText}>{isListening ? 'Stop Listening' : 'Start Listening'}</Text>
-      </TouchableOpacity>
-
-      {/* Speak Button */}
-      <TouchableOpacity
-        style={styles.voiceButton}
-        onPress={startSpeaking}
-      >
-        <Text style={styles.buttonText}>Speak Text</Text>
-      </TouchableOpacity>
+        {/* Voice Button */}
+        <TouchableOpacity style={styles.voiceButton} onPress={isListening ? stopRecording : startRecording}>
+          <MaterialIcons
+            name={isListening ? 'mic' : 'mic-none'}
+            size={24}
+            color={isListening ? '#FF5722' : '#4E4B46'} // Mic icon color changes when listening
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* Submit Button */}
       <TouchableOpacity style={styles.button}>
@@ -98,7 +87,7 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5DC',
+    backgroundColor: '#F5F5DC', // Pastel Beige background
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -106,47 +95,50 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#4E4B46',
+    color: '#4E4B46', // Deep Charcoal accent for header
     marginBottom: 40,
   },
-  textBox: {
+  textBoxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     width: '100%',
-    padding: 15,
-    backgroundColor: '#FFF8E1',
-    borderRadius: 8,
-    borderColor: '#4E4B46',
-    borderWidth: 1,
-    fontSize: 16,
     marginBottom: 20,
   },
+  textBox: {
+    flex: 1,
+    padding: 15,
+    backgroundColor: '#FFF8E1', // Soft Cream background for the TextBox
+    borderRadius: 8,
+    borderColor: '#4E4B46', // Dark border to match the accent
+    borderWidth: 1,
+    fontSize: 16,
+  },
   voiceButton: {
-    backgroundColor: '#4E4B46',
+    marginLeft: 10,
+    backgroundColor: '#FFF8E1', // Same background as TextBox
+    borderRadius: 8,
+    padding: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderColor: '#4E4B46', // Matches TextBox border
+    borderWidth: 1,
+  },
+  button: {
+    backgroundColor: '#4E4B46', // Darker accent for the button
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    marginBottom: 20,
+    elevation: 5, // Adds shadow on Android
+    shadowColor: '#000', // Shadow color for iOS
+    shadowOffset: { width: 0, height: 4 }, // Shadow direction
+    shadowOpacity: 0.1, // Shadow opacity for iOS
+    shadowRadius: 5, // Shadow blur radius for iOS
   },
   buttonText: {
-    color: '#FFF',
+    color: '#FFF', // White text color
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#4E4B46',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
   },
 });
 
