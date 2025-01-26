@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import Voice from '@react-native-voice/voice';
-import { MaterialIcons } from '@expo/vector-icons';
+import Voice, { SpeechResultsEvent } from '@react-native-voice/voice'; // Ensure correct import of Voice
+import { MaterialIcons } from '@expo/vector-icons'; // Mic Icon Library
 
 const App = () => {
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
 
   // Initialize Voice Listener
-  React.useEffect(() => {
+  useEffect(() => {
     Voice.onSpeechStart = onSpeechStart;
     Voice.onSpeechEnd = onSpeechEnd;
     Voice.onSpeechResults = onSpeechResults;
 
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+      Voice.destroy().then(Voice.removeAllListeners); // Cleanup listeners
     };
   }, []);
 
@@ -27,15 +27,19 @@ const App = () => {
     setIsListening(false);
   };
 
-  const onSpeechResults = (event) => {
-    const spokenText = event.value[0];
-    setInputText(spokenText);
+  // Fixing the type for event and updating text input with results
+  const onSpeechResults = (event: SpeechResultsEvent) => {
+    // event.value is an array, we take the first result
+    const spokenText = event.value ? event.value[0] : '';
+    if (spokenText) {
+      setInputText(spokenText); // Update text box with speech result
+    }
   };
 
   // Start Recording
   const startRecording = async () => {
     try {
-      await Voice.start('en-US'); // Specify the language
+      await Voice.start('en-US'); // Start recording with English language
       setIsListening(true);
     } catch (error) {
       console.error('Error starting voice recognition:', error);
@@ -67,7 +71,10 @@ const App = () => {
         />
 
         {/* Voice Button */}
-        <TouchableOpacity style={styles.voiceButton} onPress={isListening ? stopRecording : startRecording}>
+        <TouchableOpacity
+          style={styles.voiceButton}
+          onPress={isListening ? stopRecording : startRecording}
+        >
           <MaterialIcons
             name={isListening ? 'mic' : 'mic-none'}
             size={24}
