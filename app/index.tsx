@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import Voice, { SpeechResultsEvent } from '@react-native-voice/voice'; // Ensure correct import of Voice
-import { MaterialIcons } from '@expo/vector-icons'; // Mic Icon Library
+import Voice from '@react-native-voice/voice';
+import { MaterialIcons } from '@expo/vector-icons';
+import 'expo-dev-client';
 
 const App = () => {
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [responseText, setResponseText] = useState(''); // New state to hold the response
 
   // Initialize Voice Listener
   useEffect(() => {
@@ -14,7 +16,7 @@ const App = () => {
     Voice.onSpeechResults = onSpeechResults;
 
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners); // Cleanup listeners
+      Voice.destroy().then(Voice.removeAllListeners);
     };
   }, []);
 
@@ -27,19 +29,15 @@ const App = () => {
     setIsListening(false);
   };
 
-  // Fixing the type for event and updating text input with results
-  const onSpeechResults = (event: SpeechResultsEvent) => {
-    // event.value is an array, we take the first result
-    const spokenText = event.value ? event.value[0] : '';
-    if (spokenText) {
-      setInputText(spokenText); // Update text box with speech result
-    }
+  const onSpeechResults = (event) => {
+    const spokenText = event.value[0];
+    setInputText(spokenText);
   };
 
   // Start Recording
   const startRecording = async () => {
     try {
-      await Voice.start('en-US'); // Start recording with English language
+      await Voice.start('en-US'); // Specify the language
       setIsListening(true);
     } catch (error) {
       console.error('Error starting voice recognition:', error);
@@ -53,6 +51,29 @@ const App = () => {
       setIsListening(false);
     } catch (error) {
       console.error('Error stopping voice recognition:', error);
+    }
+  };
+
+  // Send request to Reqres
+  const sendToReqres = async () => {
+    try {
+      const response = await fetch('https://reqres.in/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: inputText,
+          job: 'Developer',
+        }),
+      });
+      const data = await response.json();
+      console.log('Response from Reqres:', data);
+      setResponseText(`Message: ${data.text}, Job: ${data.job}`); // Display the response below the button
+      alert('Data sent to Reqres successfully!');
+    } catch (error) {
+      console.error('Error sending data to Reqres:', error);
+      alert('Failed to send data to Reqres.');
     }
   };
 
@@ -71,10 +92,7 @@ const App = () => {
         />
 
         {/* Voice Button */}
-        <TouchableOpacity
-          style={styles.voiceButton}
-          onPress={isListening ? stopRecording : startRecording}
-        >
+        <TouchableOpacity style={styles.voiceButton} onPress={isListening ? stopRecording : startRecording}>
           <MaterialIcons
             name={isListening ? 'mic' : 'mic-none'}
             size={24}
@@ -84,9 +102,12 @@ const App = () => {
       </View>
 
       {/* Submit Button */}
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={sendToReqres}>
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
+
+      {/* Display Response below the Submit Button */}
+      {responseText ? <Text style={styles.responseText}>{responseText}</Text> : null}
     </View>
   );
 };
@@ -146,6 +167,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  responseText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#4E4B46', // Deep Charcoal text color
   },
 });
 

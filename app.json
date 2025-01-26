@@ -1,3 +1,6 @@
+
+
+
 {
   "expo": {
     "name": "AutoMate",
@@ -23,7 +26,8 @@
       "permissions": [
         "ANDROID.PERMISSION.RECORD_AUDIO",
         "ANDROID.PERMISSION.INTERNET"
-      ]
+      ],
+      "package": "com.AutoMate"
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +48,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "build": {
+      "development": false 
     }
   }
 }
